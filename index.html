@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Set up the HTML document by adding Mapbox GL JS -->
+<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script> 
+<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+<!-- Add a title -->
+<title> Individual Project, Nisargee Kulathunga, S3992083 </title>
+<style>
+  .map {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    bottom: 0;
+  }
+  .map-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.8);
+  margin-right: 20px;
+  font-family: Arial, sans-serif;
+  overflow: auto;
+  border-radius: 3px;
+}
+#title {
+  top: 0;
+  left: 20px;
+  height: 160px;
+  margin-top: 20px;
+  width: 500px;
+}
+#legend {
+  padding: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  line-height: 30px;
+  height: 250px;
+  right: 20px;
+  margin-bottom: 50px;
+  width: 225px;
+}
+.legend-key {
+ display: inline-block;
+  border-radius: 20%;
+  width: 30px;
+  height: 10px;
+  margin-right: 5px;
+}
+h2 {
+margin: 10px;
+font-size: 1.6em;
+text-align: left;
+}
+p {
+ margin: 10px;
+ font-size: 1em;
+ text-align: left;
+}
+.mapboxgl-popup {
+   max-width: 200px;
+}
+.mapboxgl-popup-content {
+   text-align: center;
+   font-family: 'Arial', sans-serif;
+}
+</style>
+</head>
+<body>
+    <div id="map" class="map"></div>
+    <div id='legend' class='map-overlay'> <h4>Land Surface Temperature (Celsius)</h4></div>
+    <div class='map-overlay' id='title'><h2>Land Surface Temperature distribution over Merr-ibek City Council</h2><div id='info'><p>Hover over a Mesh Block!</p></div>
+</div>
+<script>
+ mapboxgl.accessToken = 'pk.eyJ1IjoibmlzYXJnZWUiLCJhIjoiY2xldnc0ZDlkMDNobjN3cGltaHo5NjZodSJ9.T4DT1eQfgPVfcRcLeEIk_w';
+var map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/nisargee/clvbmmuuw005r01rd8y6s2xea',
+  center: [144.95596, -37.73445],
+  zoom: 13
+});
+map.addControl(new mapboxgl.NavigationControl());
+map.on('load', function() {
+ // the start of map load function
+  var layers = ['27.7 - 31.9', '31.9 - 36.2', '36.2 - 40.5', '40.5 - 44.7', '44.7 - 49.0'];
+  var colors = ['#0d5bc9', '#84c5f1', '#f8e40d', '#f89012', '#f02828'];
+    for (i = 0; i < layers.length; i++) {
+  var layer = layers[i];
+  var color = colors[i];
+  var item = document.createElement('div');
+  var key = document.createElement('span');
+  key.className = 'legend-key';
+  key.style.backgroundColor = color;
+  var value = document.createElement('span');
+  value.innerHTML = layer;
+  item.appendChild(key);
+  item.appendChild(value);
+  legend.appendChild(item);
+  }//start of adding buidling layer
+  map.addSource('wms', {
+            type: 'vector',
+            tiles: 'http://localhost:8080/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=Merribek:roadcarparkpavements&STYLE=&TILEMATRIX=EPSG:900913:{z}&TILEMATRIXSET=EPSG:900913&FORMAT=application/vnd.mapbox-vector-tile&TILECOL={x}&TILEROW={y}'
+        });
+        map.addLayer({
+            'id': 'wms',
+            'type': 'fill',
+            'source': 'wms',
+            'source-layer': 'roadcarparkpavements',
+            'paint': {
+              'fill-color': '#130101',
+            },
+        });
+ //start of mouse mover function
+ map.on('mousemove', function(i) {
+        var temperatureinfo = map.queryRenderedFeatures(i.point, {
+    layers: ['surfacetemperature-cedvog']
+    });
+        if (temperatureinfo.length > 0) {
+    document.getElementById('info').innerHTML = '<p>' + temperatureinfo[0].properties._mean + '<p><em>' + temperatureinfo[0].properties.SA2_NAME21 + '</em></p>';
+    } else {
+    document.getElementById('info').innerHTML = '<p>Hover over a shaded building for details.</p>';
+    } 
+ });//end of mouse mover function
+    // Change the icon to a pointer icon when you mouse over a building
+    map.on('mouseenter', 'surfacetemperature-cedvog', function () {
+    map.getCanvas().style.cursor = 'pointer';
+    });
+
+    // Change it back to a pan icon when it leaves.
+    map.on('mouseleave', 'surfacetemperature-cedvog', function () {
+    map.getCanvas().style.cursor = '';
+    });
+    //Start of pop-up function
+        map.on('click', 'surfacetemperature-cedvog', function (e) {new mapboxgl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML("<b>Mean Land Surface Temperature: </b>" + e.features[0].properties._mean + '<br>' + "<b>Mesh Block Code: </b>" + e.features[0].properties.MB_CODE21 + '<br>' + "<b>Mesh Block Category: </b>" + e.features[0].properties.MB_CAT21)
+        .addTo(map);
+    });//end of pop-up function
+}); //end of map load function
+</script>   
+</body>
+</html>
